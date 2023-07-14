@@ -1,3 +1,3 @@
-module github.com/Fajurion/pipes-fiber
+module github.com/Fajurion/pipesfiber
 
 go 1.20
