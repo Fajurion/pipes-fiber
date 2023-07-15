@@ -1,4 +1,4 @@
-package bridge
+package pipesfcache
 
 type ConnectionToken struct {
 	UserID   string
