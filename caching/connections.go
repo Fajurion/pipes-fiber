@@ -47,7 +47,7 @@ var connectionsCache *ristretto.Cache
 // ID -> Session list
 var sessionsCache *ristretto.Cache
 
-func setupConnectionsCache(expected int64) {
+func SetupConnectionsCache(expected int64) {
 
 	var err error
 	connectionsCache, err = ristretto.NewCache(&ristretto.Config{
