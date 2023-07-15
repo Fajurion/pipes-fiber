@@ -5,18 +5,18 @@ go 1.20
 require (
 	github.com/Fajurion/pipes v0.0.0-20230714142350-889e49e3046d
 	github.com/bytedance/sonic v1.9.2
-	github.com/gofiber/websocket/v2 v2.2.1
 	github.com/dgraph-io/ristretto v0.1.1
+	github.com/gofiber/fiber/v2 v2.46.0
+	github.com/gofiber/websocket/v2 v2.2.1
 )
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/cornelk/hashmap v1.0.8 // indirect
+	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/fasthttp/websocket v1.5.3 // indirect
-	github.com/gofiber/fiber/v2 v2.46.0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/klauspost/compress v1.16.5 // indirect
@@ -36,4 +36,5 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/sys v0.8.0 // indirect
+	nhooyr.io/websocket v1.8.7 // indirect
 )
