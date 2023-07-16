@@ -1,10 +1,9 @@
-package pipesfcache
+package pipesfiber
 
 import (
 	"chat-node/database"
 	"chat-node/database/fetching"
 	"chat-node/util"
-	"log"
 	"time"
 
 	"github.com/Fajurion/pipes"
@@ -15,17 +14,14 @@ import (
 )
 
 type Client struct {
-	Conn     *websocket.Conn
-	ID       string
-	Session  string
-	Username string
-	Tag      string
-	End      time.Time
+	Conn    *websocket.Conn
+	ID      string
+	Session string
+	End     time.Time
+	Data    interface{}
 }
 
 func (c *Client) SendEvent(event pipes.Event) {
-
-	log.Println(event.Name)
 
 	event.Sender = c.ID
 	msg, err := sonic.Marshal(event)
@@ -76,21 +72,16 @@ func getKey(id string, session string) string {
 	return id + ":" + session
 }
 
-func AddClient(conn *websocket.Conn, id string, session string, username string, tag string) {
+func AddClient(client Client) *Client {
 
-	_, add := connectionsCache.Get(getKey(id, session))
-
-	connectionsCache.Set(getKey(id, session), Client{
-		Conn:     conn,
-		ID:       id,
-		Session:  session,
-		Username: username,
-		Tag:      tag,
-	}, 1)
+	_, add := connectionsCache.Get(getKey(client.ID, client.Session))
+	connectionsCache.Set(getKey(client.ID, client.Session), client, 1)
 
 	if add {
-		addSession(id, session)
+		addSession(client.ID, client.Session)
 	}
+
+	return &client
 }
 
 func GetSessions(id string) []string {

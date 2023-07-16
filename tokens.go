@@ -1,16 +1,26 @@
-package pipesfcache
+package pipesfiber
 
 import (
 	"time"
 
 	"github.com/dgraph-io/ristretto"
+	"github.com/gofiber/websocket/v2"
 )
 
 type ConnectionToken struct {
-	UserID   string
-	Session  string
-	Username string
-	Tag      string
+	UserID  string
+	Session string
+	Data    interface{}
+}
+
+func (tk ConnectionToken) ToClient(conn *websocket.Conn, end time.Time) Client {
+	return Client{
+		Conn:    conn,
+		ID:      tk.UserID,
+		Session: tk.Session,
+		End:     end,
+		Data:    tk.Data,
+	}
 }
 
 // ! Cost 1 for all caches
@@ -48,12 +58,7 @@ func RemoveToken(token string) {
 	tokenCache.Del(token)
 }
 
-func AddToken(token string, id string, session string, username string, tag string) {
+func AddToken(tk string, token ConnectionToken) {
 
-	tokenCache.SetWithTTL(token, ConnectionToken{
-		UserID:   id,
-		Session:  session,
-		Username: username,
-		Tag:      tag,
-	}, 1, TokenTTL)
+	tokenCache.SetWithTTL(tk, token, 1, TokenTTL)
 }

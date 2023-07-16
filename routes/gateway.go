@@ -1,15 +1,11 @@
-package pipesfiber
+package pipesfroutes
 
 import (
-	"chat-node/bridge"
-	"chat-node/database/fetching"
-	"chat-node/handler"
-	"chat-node/handler/account"
-	"chat-node/service"
-	"log"
+	"time"
 
 	"github.com/Fajurion/pipes/adapter"
-	pipesfcache "github.com/Fajurion/pipesfiber/caching"
+	"github.com/Fajurion/pipesfiber"
+	"github.com/Fajurion/pipesfiber/wshandler"
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -30,16 +26,16 @@ func gatewayRouter(router fiber.Router) {
 			}
 
 			// Check if the token is valid
-			tk, ok := pipesfcache.CheckToken(token)
+			tk, ok := pipesfiber.CheckToken(token)
 			if !ok {
 				return c.SendStatus(fiber.StatusBadRequest)
 			}
 
-			if pipesfcache.ExistsConnection(tk.UserID, tk.Session) {
+			if pipesfiber.ExistsConnection(tk.UserID, tk.Session) {
 				return c.SendStatus(fiber.StatusConflict)
 			}
 
-			pipesfcache.RemoveToken(token)
+			pipesfiber.RemoveToken(token)
 
 			// Set the token as a local variable
 			c.Locals("ws", true)
@@ -59,20 +55,23 @@ type Message struct {
 }
 
 func ws(conn *websocket.Conn) {
-	tk := conn.Locals("tk").(bridge.ConnectionToken)
+	tk := conn.Locals("tk").(pipesfiber.ConnectionToken)
 
-	pipesfcache.AddClient(conn, tk.UserID, tk.Session, tk.Username, tk.Tag)
+	client := pipesfiber.AddClient(tk.ToClient(conn, time.Now().Add(pipesfiber.CurrentConfig.SessionDuration)))
 	defer func() {
 
-		// Update status
-		account.UpdateStatus(bridge.Get(tk.UserID, tk.Session), fetching.StatusOffline, "", false)
+		// Send callback to app
+		client, valid := pipesfiber.Get(tk.UserID, tk.Session)
+		if !valid {
+			return
+		}
+		pipesfiber.CurrentConfig.ClientDisconnectHandler(client)
 
-		// Remove the connection from the bridge
-		bridge.Remove(tk.UserID, tk.Session)
+		// Remove the connection from the cache
+		pipesfiber.Remove(tk.UserID, tk.Session)
 	}()
 
-	if !service.User(bridge.Get(tk.UserID, tk.Session)) {
-		log.Println("Something's wrong with the user")
+	if pipesfiber.CurrentConfig.ClientConnectHandler(client) {
 		return
 	}
 
@@ -83,6 +82,10 @@ func ws(conn *websocket.Conn) {
 			return conn.WriteMessage(websocket.TextMessage, c.Message)
 		},
 	})
+
+	if pipesfiber.CurrentConfig.ClientEnterNetworkHandler(client) {
+		return
+	}
 
 	for {
 		// Read message as text
@@ -98,9 +101,18 @@ func ws(conn *websocket.Conn) {
 			return
 		}
 
+		client, valid := pipesfiber.Get(tk.UserID, tk.Session)
+		if !valid {
+			return
+		}
+
+		if client.IsExpired() {
+			return
+		}
+
 		// Handle the event
-		if !handler.Handle(handler.Message{
-			Client: bridge.Get(tk.UserID, tk.Session),
+		if !wshandler.Handle(wshandler.Message{
+			Client: client,
 			Data:   message.Data,
 			Action: message.Action,
 		}) {
