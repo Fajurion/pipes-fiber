@@ -10,6 +10,7 @@ var CurrentConfig = Config{
 	ExpectedConnections: 1000,
 }
 
+// ! If the functions aren't implemented pipesfiber will panic
 type Config struct {
 	ExpectedConnections int64
 	SessionDuration     time.Duration // How long a session should stay alive
