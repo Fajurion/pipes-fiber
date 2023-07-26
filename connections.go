@@ -1,9 +1,6 @@
 package pipesfiber
 
 import (
-	"chat-node/database"
-	"chat-node/database/fetching"
-	"chat-node/util"
 	"time"
 
 	"github.com/Fajurion/pipes"
@@ -118,14 +115,6 @@ func removeSession(id string, session string) {
 }
 
 func Remove(id string, session string) {
-
-	database.DBConn.Model(&fetching.Session{}).Where("id = ?", session).Update("last_fetch", time.Now().UnixMilli())
-	util.PostRequest("/node/disconnect", map[string]interface{}{
-		"node":    util.NODE_ID,
-		"token":   util.NODE_TOKEN,
-		"session": session,
-	})
-
 	connectionsCache.Del(getKey(id, session))
 	removeSession(id, session)
 }
