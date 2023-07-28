@@ -11,7 +11,6 @@ import (
 
 type socketlessEvent struct {
 	Token   string        `json:"token"`
-	This    uint          `json:"this"`
 	Message pipes.Message `json:"message"`
 }
 
