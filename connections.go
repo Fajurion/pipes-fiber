@@ -18,15 +18,15 @@ type Client struct {
 	Data    interface{}
 }
 
-func (c *Client) SendEvent(event pipes.Event) {
+func (c *Client) SendEvent(event pipes.Event) error {
 
 	event.Sender = c.ID
 	msg, err := sonic.Marshal(event)
 	if err != nil {
-		return
+		return err
 	}
 
-	SendMessage(c.Conn, msg)
+	return SendMessage(c.Conn, msg)
 }
 
 func (c *Client) IsExpired() bool {
@@ -146,8 +146,8 @@ func SendSession(id string, session string, msg []byte) bool {
 	return true
 }
 
-func SendMessage(conn *websocket.Conn, msg []byte) {
-	conn.WriteMessage(websocket.TextMessage, msg)
+func SendMessage(conn *websocket.Conn, msg []byte) error {
+	return conn.WriteMessage(websocket.TextMessage, msg)
 }
 
 func ExistsConnection(id string, session string) bool {
