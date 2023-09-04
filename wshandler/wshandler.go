@@ -40,6 +40,7 @@ func Handle(message Message) bool {
 func Route(action string, message Message) {
 	defer func() {
 		if err := recover(); err != nil {
+			log.Println(err)
 			ErrorResponse(message, "invalid")
 		}
 	}()
