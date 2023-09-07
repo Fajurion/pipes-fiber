@@ -1,8 +1,6 @@
 package pipesfroutes
 
 import (
-	"chat-node/util/requests"
-
 	"github.com/Fajurion/pipes"
 	"github.com/Fajurion/pipes/connection"
 	"github.com/Fajurion/pipes/receive"
@@ -21,7 +19,7 @@ func adoptionRouter(router fiber.Router) {
 			// Adopt node
 			node, err := receive.ReceiveWSAdoption(token)
 			if err != nil {
-				return requests.InvalidRequest(c)
+				return c.SendStatus(fiber.StatusBadRequest)
 			}
 
 			// Set the token as a local variable

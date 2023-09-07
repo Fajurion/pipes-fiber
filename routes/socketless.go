@@ -1,8 +1,6 @@
 package pipesfroutes
 
 import (
-	"chat-node/util"
-
 	"github.com/Fajurion/pipes"
 	"github.com/Fajurion/pipes/receive"
 	"github.com/Fajurion/pipes/send"
@@ -23,7 +21,7 @@ func socketless(c *fiber.Ctx) error {
 	}
 
 	// Check token
-	if event.Token != util.NODE_TOKEN {
+	if event.Token != pipes.CurrentNode.Token {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 

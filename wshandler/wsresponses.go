@@ -1,7 +1,6 @@
 package wshandler
 
 import (
-	"chat-node/util"
 	"runtime/debug"
 
 	"github.com/Fajurion/pipes"
@@ -36,7 +35,7 @@ func StatusResponse(message Message, status string) {
 
 func ErrorResponse(message Message, err string) {
 
-	if util.Testing {
+	if pipes.DebugLogs {
 		debug.PrintStack()
 	}
 
