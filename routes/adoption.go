@@ -42,7 +42,6 @@ func adoptionWs(conn *websocket.Conn) {
 		// Disconnect node
 		connection.RemoveWS(node.ID)
 		pipesfiber.CurrentConfig.NodeDisconnectHandler(node)
-		// TODO: integration.ReportOffline(node)
 		conn.Close()
 	}()
 
