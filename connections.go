@@ -44,9 +44,9 @@ func SetupConnectionsCache(expected int64) {
 
 	var err error
 	connectionsCache, err = ristretto.NewCache(&ristretto.Config{
-		NumCounters: expected,               // expecting to store 10k connections
-		MaxCost:     expected - expected/10, // maximum items in the cache (with cost 1 on each set)
-		BufferItems: 64,                     // Some random number, check docs
+		NumCounters: expected * 10, // pass in expected items
+		MaxCost:     1 << 30,       // maximum cost of cache is 1GB
+		BufferItems: 64,            // Some random number, check docs
 	})
 
 	if err != nil {
@@ -54,9 +54,9 @@ func SetupConnectionsCache(expected int64) {
 	}
 
 	sessionsCache, err = ristretto.NewCache(&ristretto.Config{
-		NumCounters: expected,               // expecting to store 10k connections
-		MaxCost:     expected - expected/10, // maximum items in the cache (with cost 1 on each set)
-		BufferItems: 64,                     // Some random number, check docs
+		NumCounters: expected * 10, // pass in expected items
+		MaxCost:     1 << 30,       // maximum cost of cache is 1GB
+		BufferItems: 64,            // Some random number, check docs
 	})
 
 	if err != nil {
