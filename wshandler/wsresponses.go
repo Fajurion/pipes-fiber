@@ -1,6 +1,7 @@
 package wshandler
 
 import (
+	"log"
 	"runtime/debug"
 
 	"github.com/Fajurion/pipes"
@@ -36,6 +37,7 @@ func StatusResponse(message Message, status string) {
 func ErrorResponse(message Message, err string) {
 
 	if pipes.DebugLogs {
+		log.Println("error with action " + message.Action + ": " + err)
 		debug.PrintStack()
 	}
 
