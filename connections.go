@@ -115,6 +115,10 @@ func removeSession(id string, session string) {
 }
 
 func Remove(id string, session string) {
+	client, valid := Get(id, session)
+	if valid {
+		client.Conn.Close()
+	}
 	connectionsCache.Del(getKey(id, session))
 	removeSession(id, session)
 }
