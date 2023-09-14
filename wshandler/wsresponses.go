@@ -47,6 +47,7 @@ func ErrorResponse(message Message, err string) {
 	})
 }
 
+// Returns true if one of the fields is not set
 func (message *Message) ValidateForm(fields ...string) bool {
 
 	for _, field := range fields {
