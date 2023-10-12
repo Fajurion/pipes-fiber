@@ -14,9 +14,8 @@ func NormalResponse(message Message, data map[string]interface{}) {
 
 func Response(client string, action string, data map[string]interface{}) {
 	send.Client(client, pipes.Event{
-		Sender: "0",
-		Name:   action,
-		Data:   data,
+		Name: action,
+		Data: data,
 	})
 }
 

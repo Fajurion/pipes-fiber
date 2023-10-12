@@ -61,8 +61,7 @@ func TestConnection() {
 			send.Pipe(send.ProtocolWS, pipes.Message{
 				Channel: pipes.BroadcastChannel([]string{"1", "3"}),
 				Event: pipes.Event{
-					Sender: "0",
-					Name:   "ping",
+					Name: "ping",
 					Data: map[string]interface{}{
 						"node": pipes.CurrentNode.ID,
 					},

@@ -20,7 +20,6 @@ type Client struct {
 
 func (c *Client) SendEvent(event pipes.Event) error {
 
-	event.Sender = c.ID
 	msg, err := sonic.Marshal(event)
 	if err != nil {
 		return err
