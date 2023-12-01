@@ -1,6 +1,7 @@
 package pipesfiber
 
 import (
+	"sync"
 	"time"
 
 	"github.com/dgraph-io/ristretto"
@@ -20,6 +21,7 @@ func (tk ConnectionToken) ToClient(conn *websocket.Conn, end time.Time) Client {
 		Session: tk.Session,
 		End:     end,
 		Data:    tk.Data,
+		Mutex:   &sync.Mutex{},
 	}
 }
 

@@ -1,6 +1,7 @@
 package pipesfiber
 
 import (
+	"sync"
 	"time"
 
 	"github.com/Fajurion/pipes"
@@ -16,6 +17,7 @@ type Client struct {
 	Session string
 	End     time.Time
 	Data    interface{}
+	Mutex   *sync.Mutex
 }
 
 func (c *Client) SendEvent(event pipes.Event) error {
@@ -25,7 +27,10 @@ func (c *Client) SendEvent(event pipes.Event) error {
 		return err
 	}
 
-	return SendMessage(c.Conn, msg)
+	c.Mutex.Lock()
+	err = SendMessage(c.Conn, msg)
+	c.Mutex.Unlock()
+	return err
 }
 
 func (c *Client) IsExpired() bool {
