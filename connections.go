@@ -27,6 +27,10 @@ func (c *Client) SendEvent(event pipes.Event) error {
 		return err
 	}
 
+	if c.Mutex == nil {
+		c.Mutex = &sync.Mutex{}
+	}
+
 	c.Mutex.Lock()
 	err = SendMessage(c.Conn, msg)
 	c.Mutex.Unlock()
