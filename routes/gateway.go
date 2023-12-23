@@ -6,7 +6,6 @@ import (
 	"github.com/Fajurion/pipes/adapter"
 	"github.com/Fajurion/pipesfiber"
 	"github.com/Fajurion/pipesfiber/wshandler"
-	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 )
@@ -49,11 +48,6 @@ func gatewayRouter(router fiber.Router) {
 	router.Get("/", websocket.New(ws))
 }
 
-type Message struct {
-	Action string                 `json:"action"`
-	Data   map[string]interface{} `json:"data"`
-}
-
 func ws(conn *websocket.Conn) {
 	tk := conn.Locals("tk").(pipesfiber.ConnectionToken)
 
@@ -94,15 +88,15 @@ func ws(conn *websocket.Conn) {
 			break
 		}
 
-		// Unmarshal the event
-		var message Message
-		err = sonic.UnmarshalString(string(msg), &message)
-		if err != nil {
+		// Get the client
+		client, valid := pipesfiber.Get(tk.UserID, tk.Session)
+		if !valid {
 			return
 		}
 
-		client, valid := pipesfiber.Get(tk.UserID, tk.Session)
-		if !valid {
+		// Unmarshal the event
+		message, err := pipesfiber.CurrentConfig.DecodingMiddleware(client, msg)
+		if err != nil {
 			return
 		}
 
