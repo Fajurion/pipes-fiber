@@ -32,7 +32,7 @@ func (c *Client) SendEvent(event pipes.Event) error {
 	}
 
 	c.Mutex.Lock()
-	err = SendMessage(c.Conn, msg)
+	err = SendMessage(c.Conn, c, msg)
 	c.Mutex.Unlock()
 	return err
 }
@@ -149,7 +149,7 @@ func Send(id string, msg []byte) {
 			continue
 		}
 
-		SendMessage(client.Conn, msg)
+		SendMessage(client.Conn, client, msg)
 	}
 }
 
@@ -159,12 +159,18 @@ func SendSession(id string, session string, msg []byte) bool {
 		return false
 	}
 
-	SendMessage(client.Conn, msg)
+	SendMessage(client.Conn, client, msg)
 	return true
 }
 
-func SendMessage(conn *websocket.Conn, msg []byte) error {
-	return conn.WriteMessage(websocket.TextMessage, msg)
+func SendMessage(conn *websocket.Conn, client *Client, msg []byte) error {
+
+	msg, err := CurrentConfig.ClientEncodingMiddleware(client, msg)
+	if err != nil {
+		return err
+	}
+
+	return conn.WriteMessage(websocket.BinaryMessage, msg)
 }
 
 func ExistsConnection(id string, session string) bool {

@@ -3,6 +3,8 @@ package pipesfroutes
 import (
 	"errors"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/Fajurion/pipes/adapter"
@@ -20,11 +22,21 @@ func gatewayRouter(router fiber.Router) {
 		if websocket.IsWebSocketUpgrade(c) {
 
 			// Check if the request has a token
-			token := c.Get("Sec-WebSocket-Protocol")
+			protocolSeperated := c.Get("Sec-WebSocket-Protocol")
+			protocols := strings.Split(protocolSeperated, ", ")
+			token := protocols[0]
+
+			// Get attachments from the connection (passed to the node)
+			attachments := ""
+			if len(protocols) > 1 {
+				attachments = protocols[1]
+			}
 
 			if len(token) == 0 {
 				return c.SendStatus(fiber.StatusUnauthorized)
 			}
+
+			log.Println(c.GetReqHeaders())
 
 			// Check if the token is valid
 			tk, ok := pipesfiber.CheckToken(token)
@@ -41,6 +53,7 @@ func gatewayRouter(router fiber.Router) {
 			// Set the token as a local variable
 			c.Locals("ws", true)
 			c.Locals("tk", tk)
+			c.Locals("attached", attachments)
 			return c.Next()
 		}
 
@@ -67,7 +80,7 @@ func ws(conn *websocket.Conn) {
 		pipesfiber.Remove(tk.UserID, tk.Session)
 	}()
 
-	if pipesfiber.CurrentConfig.ClientConnectHandler(client) {
+	if pipesfiber.CurrentConfig.ClientConnectHandler(client, conn.Locals("attached").(string)) {
 		return
 	}
 
@@ -87,13 +100,16 @@ func ws(conn *websocket.Conn) {
 			msg, err := pipesfiber.CurrentConfig.ClientEncodingMiddleware(client, c.Message)
 			if err != nil {
 				pipesfiber.ReportClientError(client, "couldn't encode received message", err)
+				return err
 			}
 
-			return conn.WriteMessage(websocket.TextMessage, msg)
+			log.Println("sending " + c.Event.Name)
+
+			return conn.WriteMessage(websocket.BinaryMessage, msg)
 		},
 	})
 
-	if pipesfiber.CurrentConfig.ClientEnterNetworkHandler(client) {
+	if pipesfiber.CurrentConfig.ClientEnterNetworkHandler(client, conn.Locals("attached").(string)) {
 		return
 	}
 

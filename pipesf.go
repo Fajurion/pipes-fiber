@@ -22,8 +22,8 @@ type Config struct {
 
 	// Client handlers
 	ClientDisconnectHandler   func(client *Client)
-	ClientConnectHandler      func(client *Client) bool // Returns if the client should be disconnected (true = disconnect)
-	ClientEnterNetworkHandler func(client *Client) bool // Returns if the client should be disconnected (true = disconnect)
+	ClientConnectHandler      func(client *Client, attachments string) bool // Returns if the client should be disconnected (true = disconnect)
+	ClientEnterNetworkHandler func(client *Client, attachments string) bool // Returns if the client should be disconnected (true = disconnect)
 
 	// Codec middleware
 	ClientEncodingMiddleware func(client *Client, message []byte) ([]byte, error)
