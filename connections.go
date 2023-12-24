@@ -89,6 +89,11 @@ func AddClient(client Client) *Client {
 	return &client
 }
 
+func UpdateClient(client *Client) {
+	connectionsCache.Set(getKey(client.ID, client.Session), *client, 1)
+	connectionsCache.Wait()
+}
+
 func GetSessions(id string) []string {
 	sessions, valid := sessionsCache.Get(id)
 	if valid {

@@ -1,6 +1,8 @@
 package pipesfroutes
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Fajurion/pipes/adapter"
@@ -73,7 +75,21 @@ func ws(conn *websocket.Conn) {
 	adapter.AdaptWS(adapter.Adapter{
 		ID: tk.UserID,
 		Receive: func(c *adapter.Context) error {
-			return conn.WriteMessage(websocket.TextMessage, c.Message)
+
+			// Get the client
+			client, valid := pipesfiber.Get(tk.UserID, tk.Session)
+			if !valid {
+				pipesfiber.ReportGeneralError("couldn't get client", fmt.Errorf("%s (%s)", tk.UserID, tk.Session))
+				return errors.New("couldn't get client")
+			}
+
+			// Send message encoded with client encoding middleware
+			msg, err := pipesfiber.CurrentConfig.ClientEncodingMiddleware(client, c.Message)
+			if err != nil {
+				pipesfiber.ReportClientError(client, "couldn't encode received message", err)
+			}
+
+			return conn.WriteMessage(websocket.TextMessage, msg)
 		},
 	})
 
@@ -82,21 +98,33 @@ func ws(conn *websocket.Conn) {
 	}
 
 	for {
+
 		// Read message as text
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
+
+			// Get the client for error reporting purposes
+			client, valid := pipesfiber.Get(tk.UserID, tk.Session)
+			if !valid {
+				pipesfiber.ReportGeneralError("couldn't get client", fmt.Errorf("%s (%s)", tk.UserID, tk.Session))
+				return
+			}
+
+			pipesfiber.ReportClientError(client, "couldn't read message", err)
 			break
 		}
 
 		// Get the client
 		client, valid := pipesfiber.Get(tk.UserID, tk.Session)
 		if !valid {
+			pipesfiber.ReportGeneralError("couldn't get client", fmt.Errorf("%s (%s)", tk.UserID, tk.Session))
 			return
 		}
 
-		// Unmarshal the event
+		// Unmarshal the action
 		message, err := pipesfiber.CurrentConfig.DecodingMiddleware(client, msg)
 		if err != nil {
+			pipesfiber.ReportClientError(client, "couldn't decode message", err)
 			return
 		}
 
@@ -104,12 +132,13 @@ func ws(conn *websocket.Conn) {
 			return
 		}
 
-		// Handle the event
+		// Handle the action
 		if !wshandler.Handle(wshandler.Message{
 			Client: client,
 			Data:   message.Data,
 			Action: message.Action,
 		}) {
+			pipesfiber.ReportClientError(client, "couldn't handle action", errors.New(message.Action))
 			return
 		}
 	}
