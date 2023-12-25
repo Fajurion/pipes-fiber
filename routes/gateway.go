@@ -74,6 +74,7 @@ func ws(conn *websocket.Conn) {
 		if !valid {
 			return
 		}
+		adapter.RemoveWS(tk.UserID)
 		pipesfiber.CurrentConfig.ClientDisconnectHandler(client)
 
 		// Remove the connection from the cache
