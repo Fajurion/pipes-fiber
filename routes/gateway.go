@@ -104,7 +104,7 @@ func ws(conn *websocket.Conn) {
 				return err
 			}
 
-			log.Println("sending " + c.Event.Name)
+			log.Println("sending "+c.Event.Name, "to", tk.UserID)
 
 			return conn.WriteMessage(websocket.BinaryMessage, msg)
 		},
