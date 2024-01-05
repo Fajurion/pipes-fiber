@@ -16,6 +16,7 @@ var CurrentConfig = Config{
 type Config struct {
 	ExpectedConnections int64
 	SessionDuration     time.Duration // How long a session should stay alive
+	Secret              []byte        // JWT secret (for authorization)
 
 	// Node handlers
 	NodeDisconnectHandler func(node pipes.Node)
@@ -56,7 +57,6 @@ func DefaultDecodingMiddleware(client *Client, bytes []byte) (Message, error) {
 func Setup(config Config) {
 	CurrentConfig = config
 	SetupConnectionsCache(config.ExpectedConnections)
-	SetupTokenCache(config.ExpectedConnections)
 }
 
 func ReportGeneralError(context string, err error) {

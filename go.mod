@@ -17,6 +17,7 @@ require (
 	github.com/cornelk/hashmap v1.0.8 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/fasthttp/websocket v1.5.3 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/klauspost/compress v1.16.5 // indirect

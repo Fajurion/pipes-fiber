@@ -1,66 +1,66 @@
 package pipesfiber
 
 import (
+	"log"
 	"sync"
 	"time"
 
-	"github.com/dgraph-io/ristretto"
+	"github.com/Fajurion/pipes"
 	"github.com/gofiber/websocket/v2"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-type ConnectionToken struct {
-	UserID  string
-	Session string
-	Data    interface{}
+// Connection token struct
+type ConnectionTokenClaims struct {
+	Account        string `json:"acc"`  // Account id of the connecting client
+	ExpiredUnixSec int64  `json:"e_u"`  // Expiration time in unix seconds
+	Session        string `json:"ses"`  // Session id of the connecting client
+	Node           string `json:"node"` // Node id of the node the client is connecting to
+
+	jwt.RegisteredClaims
 }
 
-func (tk ConnectionToken) ToClient(conn *websocket.Conn, end time.Time) Client {
+func (tk ConnectionTokenClaims) ToClient(conn *websocket.Conn, end time.Time) Client {
 	return Client{
 		Conn:    conn,
-		ID:      tk.UserID,
+		ID:      tk.Account,
 		Session: tk.Session,
 		End:     end,
-		Data:    tk.Data,
 		Mutex:   &sync.Mutex{},
 	}
 }
 
-// ! Cost 1 for all caches
-var tokenCache *ristretto.Cache
+// Check the JWT token
+func CheckToken(token string) (*ConnectionTokenClaims, bool) {
 
-// * Time to live for tokens
-const TokenTTL = time.Hour * 1
-
-func SetupTokenCache(expected int64) {
-
-	var err error
-	tokenCache, err = ristretto.NewCache(&ristretto.Config{
-		NumCounters: expected,               // expecting to store 10k connections
-		MaxCost:     expected - expected/10, // maximum items in the cache (with cost 1 on each set)
-		BufferItems: 64,                     // Some random number, check docs
+	// Check the jwt token
+	jwtToken, err := jwt.ParseWithClaims(token, &ConnectionTokenClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(CurrentConfig.Secret), nil
 	})
 
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return nil, false
 	}
 
-}
+	// Check jwt claims
+	if claims, ok := jwtToken.Claims.(*ConnectionTokenClaims); ok && jwtToken.Valid {
 
-func CheckToken(token string) (ConnectionToken, bool) {
+		// Validate the node id
+		if claims.Node != pipes.CurrentNode.ID {
+			log.Println("invalid node")
+			return nil, false
+		}
 
-	tk, ok := tokenCache.Get(token)
-	if !ok {
-		return ConnectionToken{}, false
+		// Validate the expiration time
+		if time.Now().After(time.Unix(claims.ExpiredUnixSec, 0)) {
+			log.Println("invalid time")
+			return nil, false
+		}
+
+		return claims, true
 	}
 
-	return tk.(ConnectionToken), ok
-}
-
-func RemoveToken(token string) {
-	tokenCache.Del(token)
-}
-
-func AddToken(tk string, token ConnectionToken) {
-
-	tokenCache.SetWithTTL(tk, token, 1, TokenTTL)
+	log.Println("invalid")
+	return nil, false
 }

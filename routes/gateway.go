@@ -19,6 +19,7 @@ func gatewayRouter(router fiber.Router) {
 	// Inject a middleware to check if the request is a websocket upgrade request
 	router.Use("/", func(c *fiber.Ctx) error {
 
+		// Check if it is a websocket upgrade request
 		if websocket.IsWebSocketUpgrade(c) {
 
 			// Check if the request has a token
@@ -36,19 +37,16 @@ func gatewayRouter(router fiber.Router) {
 				return c.SendStatus(fiber.StatusUnauthorized)
 			}
 
-			log.Println(c.GetReqHeaders())
-
 			// Check if the token is valid
 			tk, ok := pipesfiber.CheckToken(token)
 			if !ok {
 				return c.SendStatus(fiber.StatusBadRequest)
 			}
 
-			if pipesfiber.ExistsConnection(tk.UserID, tk.Session) {
+			// Make sure the session isn't already connected
+			if pipesfiber.ExistsConnection(tk.Account, tk.Session) {
 				return c.SendStatus(fiber.StatusConflict)
 			}
-
-			pipesfiber.RemoveToken(token)
 
 			// Set the token as a local variable
 			c.Locals("ws", true)
@@ -64,21 +62,21 @@ func gatewayRouter(router fiber.Router) {
 }
 
 func ws(conn *websocket.Conn) {
-	tk := conn.Locals("tk").(pipesfiber.ConnectionToken)
+	tk := conn.Locals("tk").(*pipesfiber.ConnectionTokenClaims)
 
 	client := pipesfiber.AddClient(tk.ToClient(conn, time.Now().Add(pipesfiber.CurrentConfig.SessionDuration)))
 	defer func() {
 
 		// Send callback to app
-		client, valid := pipesfiber.Get(tk.UserID, tk.Session)
+		client, valid := pipesfiber.Get(tk.Account, tk.Session)
 		if !valid {
 			return
 		}
-		adapter.RemoveWS(tk.UserID)
+		adapter.RemoveWS(tk.Account)
 		pipesfiber.CurrentConfig.ClientDisconnectHandler(client)
 
 		// Remove the connection from the cache
-		pipesfiber.Remove(tk.UserID, tk.Session)
+		pipesfiber.Remove(tk.Account, tk.Session)
 	}()
 
 	if pipesfiber.CurrentConfig.ClientConnectHandler(client, conn.Locals("attached").(string)) {
@@ -87,13 +85,13 @@ func ws(conn *websocket.Conn) {
 
 	// Add adapter for pipes
 	adapter.AdaptWS(adapter.Adapter{
-		ID: tk.UserID,
+		ID: tk.Account,
 		Receive: func(c *adapter.Context) error {
 
 			// Get the client
-			client, valid := pipesfiber.Get(tk.UserID, tk.Session)
+			client, valid := pipesfiber.Get(tk.Account, tk.Session)
 			if !valid {
-				pipesfiber.ReportGeneralError("couldn't get client", fmt.Errorf("%s (%s)", tk.UserID, tk.Session))
+				pipesfiber.ReportGeneralError("couldn't get client", fmt.Errorf("%s (%s)", tk.Account, tk.Session))
 				return errors.New("couldn't get client")
 			}
 
@@ -104,7 +102,7 @@ func ws(conn *websocket.Conn) {
 				return err
 			}
 
-			log.Println("sending "+c.Event.Name, "to", tk.UserID)
+			log.Println("sending "+c.Event.Name, "to", tk.Account)
 
 			return conn.WriteMessage(websocket.BinaryMessage, msg)
 		},
@@ -121,9 +119,9 @@ func ws(conn *websocket.Conn) {
 		if err != nil {
 
 			// Get the client for error reporting purposes
-			client, valid := pipesfiber.Get(tk.UserID, tk.Session)
+			client, valid := pipesfiber.Get(tk.Account, tk.Session)
 			if !valid {
-				pipesfiber.ReportGeneralError("couldn't get client", fmt.Errorf("%s (%s)", tk.UserID, tk.Session))
+				pipesfiber.ReportGeneralError("couldn't get client", fmt.Errorf("%s (%s)", tk.Account, tk.Session))
 				return
 			}
 
@@ -132,9 +130,9 @@ func ws(conn *websocket.Conn) {
 		}
 
 		// Get the client
-		client, valid := pipesfiber.Get(tk.UserID, tk.Session)
+		client, valid := pipesfiber.Get(tk.Account, tk.Session)
 		if !valid {
-			pipesfiber.ReportGeneralError("couldn't get client", fmt.Errorf("%s (%s)", tk.UserID, tk.Session))
+			pipesfiber.ReportGeneralError("couldn't get client", fmt.Errorf("%s (%s)", tk.Account, tk.Session))
 			return
 		}
 
