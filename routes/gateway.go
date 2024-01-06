@@ -48,6 +48,11 @@ func gatewayRouter(router fiber.Router) {
 				return c.SendStatus(fiber.StatusConflict)
 			}
 
+			// Ask the node if the connection should be accepted
+			if pipesfiber.CurrentConfig.TokenValidateHandler(tk, attachments) {
+				return c.SendStatus(fiber.StatusBadRequest)
+			}
+
 			// Set the token as a local variable
 			c.Locals("ws", true)
 			c.Locals("tk", tk)
