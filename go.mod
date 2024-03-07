@@ -1,6 +1,6 @@
 module github.com/Fajurion/pipesfiber
 
-go 1.21
+go 1.22.1
 
 require (
 	github.com/Fajurion/pipes v0.0.0-20231228120801-b777f048bea4
